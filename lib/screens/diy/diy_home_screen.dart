@@ -1,6 +1,7 @@
 // lib/screens/diy/diy_home_screen.dart — DIY 模组列表
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../theme.dart';
 import '../../state/auth_provider.dart';
 import '../../services/database_service.dart';
 import '../../models/exercise_module.dart';
@@ -99,19 +100,30 @@ class _DiyHomeScreenState extends State<DiyHomeScreen> {
                       return false; // 手动刷新
                     },
                     child: Card(
-                      child: ListTile(
-                        title: Text(module.name),
-                        subtitle: Text(module.category),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () async {
+                      child: Row(
+                        children: [
+                          // 左侧 4px 分类色条（Spec §3.3）
+                          Container(
+                            width: 4,
+                            height: 72,
+                            color: MoveOnTheme.categoryColor(module.category),
+                          ),
+                          Expanded(
+                            child: ListTile(
+                              title: Text(module.name),
+                              subtitle: Text(module.category),
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: () async {
                           await Navigator.of(context).push(
                             MaterialPageRoute(builder: (_) =>
                                 ModuleDetailScreen(module: module)));
                           _loadModules(); // 返回后刷新
                         },
-                      ),
-                    ),
-                  );
+                      ),  // ListTile
+                      ),  // Expanded
+                    ],),  // Row(children:[...])
+                  ),  // Card
+                  );  // Dismissible
                 },
               ),
             ),

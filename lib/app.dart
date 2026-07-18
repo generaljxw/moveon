@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'state/auth_provider.dart';
+import 'theme.dart';
 import 'screens/home_screen.dart';
 
 /// MoveOn 应用根 Widget
@@ -19,10 +20,8 @@ class MoveOnApp extends StatelessWidget {
       child: MaterialApp(
         title: '动起来 - MoveOn',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
-          useMaterial3: true,
-        ),
+        // 使用 MoveOnTheme 集中管理的 Design Token（Spec §5）
+        theme: MoveOnTheme.buildTheme(),
         home: const HomeScreen(),
       ),
     );

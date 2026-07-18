@@ -30,6 +30,8 @@ dependencies:
   path: ^1.8.3
   # 音频播放 — 倒计时提示音 + 完成语音
   audioplayers: ^6.0.0
+  # Google Fonts — Noto Sans SC 中文字体
+  google_fonts: ^6.1.0
 
 dev_dependencies:
   flutter_test:
