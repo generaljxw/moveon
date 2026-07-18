@@ -17,8 +17,9 @@ dependencies:
   path_provider: ^2.1.1
   # TTS 语音合成 — 调用 Windows 系统语音引擎
   flutter_tts: ^3.8.3
-  # 视频播放 — 内置视频跟练功能
+  # 视频播放 — Windows 桌面使用 video_player_win 实现
   video_player: ^2.8.1
+  video_player_win: ^3.2.2
   # 轻量键值存储 — 保存登录状态、用户偏好
   shared_preferences: ^2.2.2
   # 密码哈希 — 单向加密存储密码

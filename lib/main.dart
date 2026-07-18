@@ -6,6 +6,7 @@
 /// 3. 启动 Flutter 应用（Provider 层自动恢复登录状态）
 import 'package:flutter/material.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:video_player_win/video_player_win_plugin.dart';
 import 'services/database_service.dart';
 import 'app.dart';
 
@@ -15,6 +16,9 @@ void main() async {
 
   // Windows 桌面：初始化 sqflite FFI 后端
   sqfliteFfiInit();
+
+  // Windows 桌面：注册 video_player_win 插件（提供 VideoPlayerController 的 Windows 实现）
+  WindowsVideoPlayer.registerWith();
 
   // 初始化本地数据库（生产模式，文件存储）
   await DatabaseService.instance.initialize();

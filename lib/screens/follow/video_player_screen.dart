@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import '../../services/category_service.dart';
 
-/// 全屏视频播放器 — 播放打包在应用中的跟练视频
+/// 全屏视频播放器 — 播放应用内置的跟练视频
 ///
-/// Windows 上 VideoPlayerController.asset() 存在兼容性问题，
-/// 改用 VideoPlayerController.file() 直接从 Flutter 数据目录加载。
+/// Windows 上由 video_player_win 插件提供 VideoPlayerController 实现，
+/// 通过 file:// 路径加载 Flutter 数据目录中的视频文件。
 class VideoPlayerScreen extends StatefulWidget {
   final VideoInfo video;
   const VideoPlayerScreen({super.key, required this.video});
@@ -27,14 +27,14 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   Future<void> _initPlayer() async {
     try {
-      // Windows 桌面：将 Flutter asset 路径转换为文件系统路径
-      // 资源文件在构建时被复制到 data/flutter_assets/ 目录（相对于可执行文件）
+      // 构建时 Flutter 将 assets/ 内容复制到 data/flutter_assets/ 目录
+      // video_player_win 需要 file:// 路径来加载视频
       final exeDir = File(Platform.resolvedExecutable).parent.path;
       final filePath = '$exeDir/data/flutter_assets/${widget.video.assetPath}';
 
       _controller = VideoPlayerController.file(File(filePath));
       await _controller.initialize();
-      await _controller.play(); // 自动开始播放
+      await _controller.play();
       setState(() => _initialized = true);
     } catch (_) {
       setState(() => _hasError = true);
@@ -55,25 +55,17 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   Widget _buildBody() {
     if (_hasError) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.video_library_outlined, size: 64, color: Colors.grey),
-              const SizedBox(height: 16),
-              const Text('视频文件未找到', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              const Text(
-                '请将第八套广播体操视频文件（480p MP4）\n'
-                '放置到以下目录后重新启动应用：\n\n'
-                'assets/videos/radio_calisthenics_8.mp4',
-                style: TextStyle(color: Colors.grey, height: 1.6),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.video_library_outlined, size: 64, color: Colors.grey),
+            SizedBox(height: 16),
+            Text('视频无法播放', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            SizedBox(height: 8),
+            Text('请确认视频文件已正确内置到应用中',
+              style: TextStyle(color: Colors.grey)),
+          ],
         ),
       );
     }
@@ -85,13 +77,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     return Column(
       children: [
         Expanded(child: VideoPlayer(_controller)),
-        // 进度条和播放时间
-        VideoProgressIndicator(
-          _controller,
-          allowScrubbing: true,
-          colors: const VideoProgressColors(playedColor: Colors.teal),
-        ),
-        // 控制栏：播放/暂停 + 重新播放
+        VideoProgressIndicator(_controller, allowScrubbing: true,
+          colors: const VideoProgressColors(playedColor: Colors.teal)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
@@ -99,21 +86,14 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
               IconButton(
                 icon: Icon(_controller.value.isPlaying ? Icons.pause : Icons.play_arrow),
                 onPressed: () {
-                  setState(() {
-                    _controller.value.isPlaying ? _controller.pause() : _controller.play();
-                  });
+                  setState(() { _controller.value.isPlaying ? _controller.pause() : _controller.play(); });
                 },
               ),
               const Spacer(),
               if (_controller.value.position >= _controller.value.duration)
                 TextButton.icon(
-                  icon: const Icon(Icons.replay),
-                  label: const Text('重新播放'),
-                  onPressed: () {
-                    _controller.seekTo(Duration.zero);
-                    _controller.play();
-                    setState(() {});
-                  },
+                  icon: const Icon(Icons.replay), label: const Text('重新播放'),
+                  onPressed: () { _controller.seekTo(Duration.zero); _controller.play(); setState(() {}); },
                 ),
             ],
           ),
