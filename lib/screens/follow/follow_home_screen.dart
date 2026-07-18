@@ -6,8 +6,8 @@ import 'video_list_screen.dart';
 
 /// 跟练首页 — 8 种运动类型的卡片网格
 ///
-/// 每行 2 列，显示分类图标、名称和视频数量角标。
-/// 点击卡片进入对应类型的视频列表。
+/// 一排 4 个，两排展示完毕，无需滚动。
+/// 每个卡片显示分类专属图标、名称和视频数量角标。
 class FollowHomeScreen extends StatelessWidget {
   const FollowHomeScreen({super.key});
 
@@ -16,12 +16,12 @@ class FollowHomeScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('视频跟练')),
       body: GridView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,           // 每行 2 列
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 1.0,      // 正方形卡片
+          crossAxisCount: 4,              // 一排 4 个，8 类刚好两排
+          crossAxisSpacing: 8,
+          mainAxisSpacing: 8,
+          childAspectRatio: 0.75,         // 略高的卡片比例
         ),
         itemCount: categories.length,
         itemBuilder: (context, index) {
@@ -37,7 +37,7 @@ class FollowHomeScreen extends StatelessWidget {
   }
 }
 
-/// 运动类型卡片 — 图标 + 名称 + 视频角标
+/// 运动类型卡片 — 专属图标 + 名称 + 视频角标
 class _CategoryCard extends StatelessWidget {
   final WorkoutCategory category;
   final VoidCallback onTap;
@@ -49,18 +49,19 @@ class _CategoryCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          // 紧凑内边距适配 4 列布局
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.fitness_center, size: 40, color: Colors.teal),
-              const SizedBox(height: 8),
-              Text(category.name, style: const TextStyle(fontSize: 16)),
+              Icon(category.iconData, size: 28, color: Colors.teal),
               const SizedBox(height: 4),
-              // 视频角标：有视频显示数量，无视频显示"敬请期待"
+              Text(category.name, style: const TextStyle(fontSize: 13),
+                textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
+              const SizedBox(height: 2),
               Text(
-                category.hasVideos ? '${category.videoCount} 个视频' : '敬请期待',
-                style: TextStyle(fontSize: 12, color: category.hasVideos ? Colors.teal : Colors.grey),
+                category.hasVideos ? '${category.videoCount}个视频' : '敬请期待',
+                style: TextStyle(fontSize: 10, color: category.hasVideos ? Colors.teal : Colors.grey),
               ),
             ],
           ),

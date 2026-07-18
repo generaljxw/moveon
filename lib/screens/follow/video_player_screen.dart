@@ -52,15 +52,25 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   Widget _buildBody() {
     // 视频文件缺失或损坏 (SR2 2a)
     if (_hasError) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 64, color: Colors.red),
-            SizedBox(height: 16),
-            Text('视频无法播放，请检查安装包是否完整',
-                style: TextStyle(color: Colors.grey)),
-          ],
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.video_library_outlined, size: 64, color: Colors.grey),
+              const SizedBox(height: 16),
+              const Text('视频文件未找到', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              const Text(
+                '请将第八套广播体操视频文件（480p MP4）\n'
+                '放置到以下目录后重新启动应用：\n\n'
+                'assets/videos/radio_calisthenics_8.mp4',
+                style: TextStyle(color: Colors.grey, height: 1.6),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       );
     }
