@@ -33,7 +33,10 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   @override void initState() {
     super.initState();
-    _initPlayer();
+    // 延迟到首帧构建完成后执行，确保 showDialog 的 Overlay 已就绪
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _initPlayer();
+    });
   }
 
   /// 根据视频类型初始化对应的播放方式

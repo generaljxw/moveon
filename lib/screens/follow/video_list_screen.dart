@@ -118,19 +118,15 @@ class _VideoListScreenState extends State<VideoListScreen> {
     final hasAnyVideos = builtInVideos.isNotEmpty || _onlineVideos.isNotEmpty;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.category.name),
-        // 仅已登录用户可见 + 号按钮
-        actions: auth.isLoggedIn
-            ? [
-                IconButton(
-                  icon: const Icon(Icons.add),
-                  onPressed: _addVideo,
-                  tooltip: '添加在线视频',
-                ),
-              ]
-            : null,
-      ),
+      appBar: AppBar(title: Text(widget.category.name)),
+      // 右下角 FAB：「添加在线视频」卡片式按钮（仅登录用户可见）
+      floatingActionButton: auth.isLoggedIn
+          ? FloatingActionButton.extended(
+              onPressed: _addVideo,
+              icon: const Icon(Icons.add),
+              label: const Text('添加在线视频'),
+            )
+          : null,
       body: !hasAnyVideos
           ? _buildEmpty()
           : RefreshIndicator(
