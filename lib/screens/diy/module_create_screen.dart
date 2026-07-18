@@ -48,6 +48,48 @@ class _ModuleCreateScreenState extends State<ModuleCreateScreen> {
   bool get _canSave =>
       _name.trim().isNotEmpty && _actions.any((a) => !a.isRest);
 
+  /// 快捷休息对话框 — 仅需输入时长，名称固定为"休息"，默认 10 秒
+  Future<void> _showQuickRestDialog() async {
+    final durationCtrl = TextEditingController(text: '10');
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('添加休息间隔'),
+        content: TextField(
+          controller: durationCtrl,
+          decoration: const InputDecoration(
+            labelText: '休息时长（秒）', hintText: '5-600', helperText: '默认 10 秒'),
+          keyboardType: TextInputType.number,
+          autofocus: true, // 自动聚焦，方便快速输入
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('取消')),
+          TextButton(
+            onPressed: () {
+              final dur = int.tryParse(durationCtrl.text);
+              if (dur == null || dur < 5 || dur > 600) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('时长范围为 5-600 秒')));
+                return;
+              }
+              Navigator.of(ctx).pop(true);
+            },
+            child: const Text('添加'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true) {
+      setState(() => _actions.add(_ActionDraft(
+        name: '休息',
+        durationSeconds: int.parse(durationCtrl.text),
+        isRest: true,
+      )));
+    }
+  }
+
   /// 弹出"添加动作"对话框
   Future<void> _showAddActionDialog({_ActionDraft? editTarget, int? editIndex}) async {
     final nameCtrl = TextEditingController(text: editTarget?.name ?? '');
@@ -241,16 +283,13 @@ class _ModuleCreateScreenState extends State<ModuleCreateScreen> {
               ),
             ),
             const SizedBox(width: 8),
-            // 快捷休息：一键添加 60 秒休息间隔，无需输入名称
+            // 快捷休息：弹出时长选择对话框，默认 10 秒
             Expanded(
               child: OutlinedButton.icon(
                 icon: const Icon(Icons.bedtime_outlined, size: 18),
                 label: const Text('快捷休息', style: TextStyle(fontSize: 13)),
                 style: OutlinedButton.styleFrom(foregroundColor: Colors.orange),
-                onPressed: () {
-                  setState(() => _actions.add(_ActionDraft(
-                    name: '休息', durationSeconds: 60, isRest: true)));
-                },
+                onPressed: () => _showQuickRestDialog(),
               ),
             ),
             const SizedBox(width: 8),
