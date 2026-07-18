@@ -1,28 +1,23 @@
-import 'package:flutter/material.dart';
-
-void main() {
-  runApp(const MoveOnApp());
-}
-
-/// MoveOn（动起来）应用入口
+// lib/main.dart — MoveOn 应用入口
 ///
-/// V1.0: Windows 桌面健身应用，包含跟练、DIY 模组和用户中心。
-class MoveOnApp extends StatelessWidget {
-  const MoveOnApp({super.key});
+/// 启动流程：
+/// 1. 初始化 sqflite FFI（Windows 桌面必需）
+/// 2. 初始化本地数据库
+/// 3. 启动 Flutter 应用（Provider 层自动恢复登录状态）
+import 'package:flutter/material.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'services/database_service.dart';
+import 'app.dart';
 
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: '动起来',
-      theme: ThemeData(
-        colorSchemeSeed: Colors.blue,
-        useMaterial3: true,
-      ),
-      home: const Scaffold(
-        body: Center(
-          child: Text('MoveOn (动起来)'),
-        ),
-      ),
-    );
-  }
+void main() async {
+  // Flutter 绑定必须在异步操作前初始化
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Windows 桌面：初始化 sqflite FFI 后端
+  sqfliteFfiInit();
+
+  // 初始化本地数据库（生产模式，文件存储）
+  await DatabaseService.instance.initialize();
+
+  runApp(const MoveOnApp());
 }
