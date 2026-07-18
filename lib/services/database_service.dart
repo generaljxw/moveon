@@ -35,7 +35,11 @@ class DatabaseService {
       final testPath = 'file:test_${DateTime.now().microsecondsSinceEpoch}.db?mode=memory&cache=shared';
       _db = await databaseFactoryFfi.openDatabase(
         testPath,
-        options: OpenDatabaseOptions(version: 1, onCreate: _onCreate),
+        options: OpenDatabaseOptions(
+          version: 2,
+          onCreate: _onCreate,
+          onUpgrade: _onUpgrade,
+        ),
       );
       return;
     }
@@ -45,7 +49,11 @@ class DatabaseService {
     final dbPath = p.join(dir.path, 'moveon.db');
     _db = await databaseFactoryFfi.openDatabase(
       dbPath,
-      options: OpenDatabaseOptions(version: 1, onCreate: _onCreate),
+      options: OpenDatabaseOptions(
+        version: 2,
+        onCreate: _onCreate,
+        onUpgrade: _onUpgrade,
+      ),
     );
   }
 
@@ -99,5 +107,41 @@ class DatabaseService {
         FOREIGN KEY (module_id) REFERENCES exercise_modules(id) ON DELETE CASCADE
       )
     ''');
+
+    // ---- online_videos: 在线视频链接表 ----
+    // video_type: 'direct'=直链视频（应用内播放）/ 'link'=平台链接（浏览器打开）
+    // 同一用户同一分类下 URL 不重复的校验在 VideoLinkService 层完成
+    await db.execute('''
+      CREATE TABLE online_videos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        category TEXT NOT NULL,
+        title TEXT NOT NULL,
+        url TEXT NOT NULL,
+        video_type TEXT NOT NULL DEFAULT 'link',
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    ''');
+  }
+
+  /// 数据库升级回调 — v1 → v2：新增 online_videos 表
+  ///
+  /// 对已有 v1 数据库执行增量迁移，不影响已有数据。
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS online_videos (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER NOT NULL,
+          category TEXT NOT NULL,
+          title TEXT NOT NULL,
+          url TEXT NOT NULL,
+          video_type TEXT NOT NULL DEFAULT 'link',
+          created_at TEXT NOT NULL,
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+      ''');
+    }
   }
 }
