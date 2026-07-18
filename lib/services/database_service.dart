@@ -31,8 +31,10 @@ class DatabaseService {
     if (_db != null) return;
 
     if (inMemory) {
+      // 使用带时间戳的唯一路径确保每个测试实例完全独立
+      final testPath = 'file:test_${DateTime.now().microsecondsSinceEpoch}.db?mode=memory&cache=shared';
       _db = await databaseFactoryFfi.openDatabase(
-        inMemoryDatabasePath,
+        testPath,
         options: OpenDatabaseOptions(version: 1, onCreate: _onCreate),
       );
       return;
