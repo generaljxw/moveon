@@ -31,6 +31,7 @@ class _ModuleCreateScreenState extends State<ModuleCreateScreen> {
   late String _name;               // 模组名称
   late String _category;           // 运动类型
   final List<_ActionDraft> _actions = []; // 动作列表
+  final Set<int> _selectedIndices = {};   // 批量删除选中的索引集合
 
   bool get _isEditing => widget.existingModule != null;
 
@@ -87,6 +88,32 @@ class _ModuleCreateScreenState extends State<ModuleCreateScreen> {
         durationSeconds: int.parse(durationCtrl.text),
         isRest: true,
       )));
+    }
+  }
+
+  /// 批量删除选中动作（SR2 5b）
+  Future<void> _batchDelete() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('确认删除'),
+        content: Text('确定要删除已选的 ${_selectedIndices.length} 个动作吗？'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('取消')),
+          TextButton(onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('确定', style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      setState(() {
+        // 从大到小删除索引，避免位移影响
+        final sorted = _selectedIndices.toList()..sort((a, b) => b.compareTo(a));
+        for (final i in sorted) {
+          _actions.removeAt(i);
+        }
+        _selectedIndices.clear();
+      });
     }
   }
 
@@ -223,24 +250,69 @@ class _ModuleCreateScreenState extends State<ModuleCreateScreen> {
               ),
             ]),
           ),
-          // ---- 动作列表（可拖拽排序 / SR1 step 12） ----
+          // ---- 动作列表（复选框 + 拖拽排序 / SR2 5a/5d） ----
           Expanded(
             child: ReorderableListView.builder(
+              buildDefaultDragHandles: false, // 手动添加拖拽手柄，避免与编辑/删除图标重叠
               itemCount: _actions.length,
               onReorder: (oldIndex, newIndex) {
                 setState(() {
                   if (newIndex > oldIndex) newIndex--;
                   final item = _actions.removeAt(oldIndex);
                   _actions.insert(newIndex, item);
+                  // 拖拽后更新选中索引映射
+                  final newSelected = <int>{};
+                  for (final i in _selectedIndices) {
+                    if (i == oldIndex) {
+                      newSelected.add(newIndex);
+                    } else if (i > oldIndex && i <= newIndex) {
+                      newSelected.add(i - 1);
+                    } else if (i < oldIndex && i >= newIndex) {
+                      newSelected.add(i + 1);
+                    } else {
+                      newSelected.add(i);
+                    }
+                  }
+                  _selectedIndices..clear()..addAll(newSelected);
                 });
+              },
+              proxyDecorator: (child, index, animation) {
+                // 拖拽时给目标项添加半透明浮层效果
+                return AnimatedBuilder(
+                  animation: animation,
+                  builder: (context, child) => Material(
+                    elevation: 4, color: Colors.transparent,
+                    child: child,
+                  ),
+                  child: child,
+                );
               },
               itemBuilder: (context, index) {
                 final action = _actions[index];
+                final isSelected = _selectedIndices.contains(index);
                 return ListTile(
-                  key: ValueKey('action_$index'),
-                  leading: CircleAvatar(
-                    backgroundColor: action.isRest ? Colors.orange.shade100 : Colors.teal.shade100,
-                    child: Text('${index + 1}'),
+                  // ObjectKey 使用对象身份而非位置，确保拖拽后元素正确跟踪
+                  key: ObjectKey(action),
+                  // 选中状态高亮背景
+                  tileColor: isSelected ? Colors.teal.withAlpha(30) : null,
+                  leading: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // 批量删除复选框（SR2 5a）
+                      Checkbox(
+                        value: isSelected,
+                        onChanged: (v) => setState(() {
+                          if (v == true) _selectedIndices.add(index);
+                          else _selectedIndices.remove(index);
+                        }),
+                      ),
+                      // 序号标签
+                      CircleAvatar(
+                        radius: 16,
+                        backgroundColor: action.isRest ? Colors.orange.shade100 : Colors.teal.shade100,
+                        child: Text('${index + 1}', style: const TextStyle(fontSize: 13)),
+                      ),
+                    ],
                   ),
                   title: Text(action.name),
                   subtitle: Text(action.isRest
@@ -249,51 +321,81 @@ class _ModuleCreateScreenState extends State<ModuleCreateScreen> {
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // 编辑按钮
+                      // 拖拽手柄 — 长按此处拖动排序（SR2 5d）
+                      ReorderableDragStartListener(
+                        index: index,
+                        child: const Icon(Icons.drag_handle, color: Colors.grey),
+                      ),
+                      // 行内编辑按钮（SR2 5c）
                       IconButton(icon: const Icon(Icons.edit, size: 20),
                           onPressed: () => _showAddActionDialog(editTarget: action, editIndex: index)),
-                      // 滑动删除（SR1 12a）
+                      // 单条删除按钮
                       IconButton(icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
-                          onPressed: () => setState(() => _actions.removeAt(index))),
+                          onPressed: () => setState(() {
+                            _actions.removeAt(index);
+                            _selectedIndices.remove(index);
+                            // 删除后重新映射选中索引
+                            final newSelected = <int>{};
+                            for (final i in _selectedIndices) {
+                              if (i > index) newSelected.add(i - 1);
+                            }
+                            _selectedIndices..clear()..addAll(newSelected);
+                          })),
                     ],
                   ),
-                  // 休息类型显示橙色标签
                 );
               },
             ),
           ),
         ],
       ),
-      // ---- 底部操作栏：添加动作 | 快捷休息 | 保存模组 ----
+      // ---- 底部操作栏：批量删除 / 添加动作 | 添加休息 | 保存模组 ----
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Row(children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                icon: const Icon(Icons.add),
-                label: const Text('添加动作'),
-                onPressed: () => _showAddActionDialog(),
-              ),
-            ),
-            const SizedBox(width: 8),
-            // 添加休息：弹出时长选择对话框，默认 10 秒
-            Expanded(
-              child: OutlinedButton.icon(
-                icon: const Icon(Icons.bedtime_outlined, size: 18),
-                label: const Text('添加休息', style: TextStyle(fontSize: 13)),
-                style: OutlinedButton.styleFrom(foregroundColor: Colors.orange),
-                onPressed: () => _showQuickRestDialog(),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: ElevatedButton(
-                onPressed: _canSave ? _save : null,
-                child: const Text('保存模组'),
-              ),
-            ),
-          ]),
+          child: _selectedIndices.isNotEmpty
+              // 有选中项时显示批量删除栏
+              ? Row(children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.delete_outline),
+                      label: Text('删除已选（${_selectedIndices.length}条）'),
+                      style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+                      onPressed: () => _batchDelete(),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  OutlinedButton(
+                    onPressed: () => setState(() => _selectedIndices.clear()),
+                    child: const Text('取消选择'),
+                  ),
+                ])
+              // 无选中项时显示正常操作栏
+              : Row(children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.add),
+                      label: const Text('添加动作'),
+                      onPressed: () => _showAddActionDialog(),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.bedtime_outlined, size: 18),
+                      label: const Text('添加休息', style: TextStyle(fontSize: 13)),
+                      style: OutlinedButton.styleFrom(foregroundColor: Colors.orange),
+                      onPressed: () => _showQuickRestDialog(),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _canSave ? _save : null,
+                      child: const Text('保存模组'),
+                    ),
+                  ),
+                ]),
         ),
       ),
     );
