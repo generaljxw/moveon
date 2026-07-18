@@ -267,8 +267,8 @@ class _OnlineVideoTile extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: Icon(
-              // 直链视频 → 视频图标，平台链接 → 浏览器图标
-              isDirect ? Icons.ondemand_video : Icons.open_in_browser,
+              // 直链视频 → 视频图标，平台链接 → 地球网页图标
+              isDirect ? Icons.ondemand_video : Icons.language,
               color: labelColor, size: 24,
             ),
           ),
