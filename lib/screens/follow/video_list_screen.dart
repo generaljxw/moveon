@@ -64,6 +64,16 @@ class _VideoListScreenState extends State<VideoListScreen> {
     final toSave = result.copyWith(userId: auth.currentUser!.id);
     await _videoLinkService.addVideo(toSave);
     _loadOnlineVideos();
+
+    // 首次添加：引导用户发现编辑/删除菜单
+    if (_onlineVideos.length == 1 && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('点击右侧 ⋮ 可编辑或删除视频，也可左滑删除'),
+          duration: Duration(seconds: 4),
+        ),
+      );
+    }
   }
 
   /// 打开编辑弹窗 → 保存 → 更新 → 刷新
@@ -264,7 +274,7 @@ class _OnlineVideoTile extends StatelessWidget {
           title: Text(video.title, maxLines: 1, overflow: TextOverflow.ellipsis),
           subtitle: Row(
             children: [
-              // "在线" 标签 — 绿色/橙色胶囊
+              // "在线" 标签
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                 decoration: BoxDecoration(
@@ -276,9 +286,25 @@ class _OnlineVideoTile extends StatelessWidget {
               ),
             ],
           ),
-          trailing: const Icon(Icons.chevron_right),
+          // ⋮ 菜单：编辑 / 删除（与手势互补）
+          trailing: PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: (value) {
+              if (value == 'edit') {
+                onEdit();
+              } else if (value == 'delete') {
+                onDelete();
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(value: 'edit',
+                child: ListTile(leading: Icon(Icons.edit, size: 20), title: Text('编辑'), dense: true)),
+              const PopupMenuItem(value: 'delete',
+                child: ListTile(leading: Icon(Icons.delete, size: 20, color: Colors.red), title: Text('删除', style: TextStyle(color: Colors.red)), dense: true)),
+            ],
+          ),
           onTap: onTap,
-          onLongPress: onEdit, // 长按进入编辑
+          onLongPress: onEdit, // 长按编辑（保留作为快捷操作）
         ),
       ),
     );
