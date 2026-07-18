@@ -1,0 +1,19 @@
+# Flutter
+.dart_tool/
+.packages
+build/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project
+*.log
+.env
