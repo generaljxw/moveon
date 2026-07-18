@@ -23,7 +23,7 @@ class CategoryService {
   List<VideoInfo> getVideosForCategory(String categoryName) {
     if (categoryName == '体操') {
       return const [
-        VideoInfo(title: '第八套广播体操', durationSeconds: 300, assetPath: 'assets/videos/radio_calisthenics_8.mp4'),
+        VideoInfo(title: '第八套广播体操', durationSeconds: 300, assetPath: 'videos/radio_calisthenics_8.mp4'),
       ];
     }
     return [];
