@@ -82,8 +82,12 @@ class _FollowHomeScreenState extends State<FollowHomeScreen> {
             category: cat,
             onlineCount: onlineCount,
             totalCount: totalCount,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => VideoListScreen(category: cat))),
+            // await push → 返回后刷新计数（与 DIY 列表模式一致）
+            onTap: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => VideoListScreen(category: cat)));
+              _loadOnlineCounts();
+            },
           );
         },
       ),
