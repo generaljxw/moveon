@@ -18,20 +18,32 @@ class ModuleDetailScreen extends StatefulWidget {
 
 class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
   List<ExerciseAction> _actions = [];
+  late ExerciseModule _module; // 编辑后可变，用于即时刷新显示的模块信息
 
   @override void initState() {
     super.initState();
+    _module = widget.module;
     _loadActions();
   }
 
   Future<void> _loadActions() async {
     final db = await DatabaseService.instance.database;
     final rows = await db.query('exercise_actions',
-      where: 'module_id = ?', whereArgs: [widget.module.id],
+      where: 'module_id = ?', whereArgs: [_module.id],
       orderBy: 'sort_order ASC');
     if (mounted) setState(() {
       _actions = rows.map((r) => ExerciseAction.fromMap(r)).toList();
     });
+  }
+
+  /// 重新加载模组基本信息（编辑返回后调用，确保名称/类别即时刷新）
+  Future<void> _reloadModule() async {
+    final db = await DatabaseService.instance.database;
+    final rows = await db.query('exercise_modules',
+      where: 'id = ?', whereArgs: [_module.id]);
+    if (rows.isNotEmpty && mounted) {
+      setState(() => _module = ExerciseModule.fromMap(rows.first));
+    }
   }
 
   Future<void> _delete() async {
@@ -39,7 +51,7 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('确认删除'),
-        content: Text('确定要删除模组「${widget.module.name}」吗？删除后不可恢复。'),
+        content: Text('确定要删除模组「${_module.name}」吗？删除后不可恢复。'),
         actions: [
           TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('取消')),
           TextButton(onPressed: () => Navigator.of(ctx).pop(true),
@@ -49,7 +61,7 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
     );
     if (confirmed == true) {
       final db = await DatabaseService.instance.database;
-      await db.delete('exercise_modules', where: 'id = ?', whereArgs: [widget.module.id]);
+      await db.delete('exercise_modules', where: 'id = ?', whereArgs: [_module.id]);
       if (mounted) Navigator.of(context).pop(true);
     }
   }
@@ -57,13 +69,16 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
   @override Widget build(BuildContext context) {
     final totalSec = ExerciseModule.totalDuration(_actions);
     return Scaffold(
-      appBar: AppBar(title: Text(widget.module.name),
+      appBar: AppBar(title: Text(_module.name),
         actions: [
           PopupMenuButton<String>(
-            onSelected: (val) {
+            onSelected: (val) async {
               if (val == 'edit') {
-                Navigator.of(context).push(MaterialPageRoute(builder: (_) =>
-                    ModuleCreateScreen(existingModule: widget.module, existingActions: _actions)));
+                // await 等待编辑页返回后重新加载，确保编辑结果即时刷新
+                await Navigator.of(context).push(MaterialPageRoute(builder: (_) =>
+                    ModuleCreateScreen(existingModule: _module, existingActions: _actions)));
+                _reloadModule();
+                _loadActions();
               } else if (val == 'delete') { _delete(); }
             },
             itemBuilder: (_) => [
@@ -79,7 +94,7 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
           Padding(
             padding: const EdgeInsets.all(16),
             child: Row(children: [
-              Chip(label: Text(widget.module.category)),
+              Chip(label: Text(_module.category)),
               const SizedBox(width: 12),
               Text('${_actions.length} 个动作'),
               const Spacer(),
@@ -122,7 +137,7 @@ class _ModuleDetailScreenState extends State<ModuleDetailScreen> {
               label: const Text('开始练习'),
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) =>
-                    ModuleExecuteScreen(module: widget.module, actions: _actions))),
+                    ModuleExecuteScreen(module: _module, actions: _actions))),
             ),
           ),
         ),
