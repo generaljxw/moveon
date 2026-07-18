@@ -63,7 +63,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
     // 填入 userId 并写入数据库
     final toSave = result.copyWith(userId: auth.currentUser!.id);
     await _videoLinkService.addVideo(toSave);
-    _loadOnlineVideos();
+    await _loadOnlineVideos(); // 必须 await，否则后续 SnackBar 检查时数据未更新
 
     // 首次添加：引导用户发现编辑/删除菜单
     if (_onlineVideos.length == 1 && mounted) {
@@ -267,7 +267,8 @@ class _OnlineVideoTile extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: Icon(
-              isDirect ? Icons.language : Icons.open_in_browser,
+              // 直链视频 → 视频图标，平台链接 → 浏览器图标
+              isDirect ? Icons.ondemand_video : Icons.open_in_browser,
               color: labelColor, size: 24,
             ),
           ),
