@@ -32,6 +32,8 @@ dependencies:
   audioplayers: ^6.0.0
   # Google Fonts — Noto Sans SC 中文字体
   google_fonts: ^6.1.0
+  # URL 启动器 — 调用系统浏览器打开外部链接
+  url_launcher: ^6.2.2
 
 dev_dependencies:
   flutter_test:
