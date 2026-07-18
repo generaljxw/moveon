@@ -228,7 +228,7 @@ class _ModuleCreateScreenState extends State<ModuleCreateScreen> {
           ),
         ],
       ),
-      // ---- 底部操作栏 ----
+      // ---- 底部操作栏：添加动作 | 快捷休息 | 保存模组 ----
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -240,7 +240,20 @@ class _ModuleCreateScreenState extends State<ModuleCreateScreen> {
                 onPressed: () => _showAddActionDialog(),
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 8),
+            // 快捷休息：一键添加 60 秒休息间隔，无需输入名称
+            Expanded(
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.bedtime_outlined, size: 18),
+                label: const Text('快捷休息', style: TextStyle(fontSize: 13)),
+                style: OutlinedButton.styleFrom(foregroundColor: Colors.orange),
+                onPressed: () {
+                  setState(() => _actions.add(_ActionDraft(
+                    name: '休息', durationSeconds: 60, isRest: true)));
+                },
+              ),
+            ),
+            const SizedBox(width: 8),
             Expanded(
               child: ElevatedButton(
                 onPressed: _canSave ? _save : null,

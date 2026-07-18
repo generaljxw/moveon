@@ -27,6 +27,8 @@ dependencies:
   intl: ^0.19.0
   # 路径拼接 — 数据库文件路径构造
   path: ^1.8.3
+  # 音频播放 — 倒计时提示音 + 完成语音
+  audioplayers: ^6.0.0
 
 dev_dependencies:
   flutter_test:

@@ -1,4 +1,5 @@
 // lib/screens/diy/module_execute_screen.dart — 练习执行页面
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import '../../models/exercise_module.dart';
 import '../../models/exercise_action.dart';
@@ -7,8 +8,7 @@ import '../../widgets/countdown_timer.dart';
 
 /// 练习执行页面 — 按顺序执行每个动作
 ///
-/// 流程：TTS 播报 → 倒计时 → 切换到下一动作 → 全部完成播放结束语。
-/// 休息动作跳过倒计时提示音（最后 5 秒不亮红）。
+/// 流程：TTS 播报 → 倒计时（含铛铛铛提示音）→ 切换下一动作 → 全部完成播放结束语。
 class ModuleExecuteScreen extends StatefulWidget {
   final ExerciseModule module;
   final List<ExerciseAction> actions;
@@ -19,38 +19,50 @@ class ModuleExecuteScreen extends StatefulWidget {
 }
 
 class _ModuleExecuteScreenState extends State<ModuleExecuteScreen> {
-  int _currentIndex = 0;       // 当前动作索引
-  bool _finished = false;      // 是否全部完成
+  int _currentIndex = 0;
+  bool _finished = false;
   final GlobalKey<CountdownTimerState> _timerKey = GlobalKey();
   final TtsService _tts = TtsService.instance;
+
+  // 音频播放器 — 播放内置提示音和结束语音
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   ExerciseAction get _currentAction => widget.actions[_currentIndex];
 
   @override void initState() {
     super.initState();
-    // 自动开始第一个动作（SR3 step 3）
     WidgetsBinding.instance.addPostFrameCallback((_) => _speakCurrentAction());
   }
 
-  /// 播报当前动作名称和时长
+  @override void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+
+  /// 播报当前动作名称和时长（TTS）
   Future<void> _speakCurrentAction() async {
     try {
       await _tts.init();
       await _tts.speak('${_currentAction.name}，时间${_currentAction.durationSeconds}秒');
     } catch (_) {
-      // TTS 不可用 → 静默执行（SR3 2a 已在进入前提示，此处静默降级）
+      // TTS 不可用 → 静默继续
     }
   }
 
-  /// 当前动作倒计时结束 → 切换到下一动作
+  /// 倒计时倒数到 5 秒 → 播放"铛铛铛"提示音
+  void _playCountdownBeep() {
+    _audioPlayer.play(AssetSource('audio/countdown_beep.wav'));
+  }
+
+  /// 当前动作完成 → 切换到下一动作
   void _onActionComplete() {
     if (_currentIndex >= widget.actions.length - 1) {
-      // 全部完成（SR3 step 7）
+      // 全部完成（SR3 step 7）：播放结束语音 + 内置音频
       setState(() => _finished = true);
+      _audioPlayer.play(AssetSource('audio/workout_complete.wav'));
       _tts.speak('锻炼结束，好好休息吧');
     } else {
       setState(() => _currentIndex++);
-      // 延迟等待 TTS 播报当前动作（SR3 step 3）
       WidgetsBinding.instance.addPostFrameCallback((_) => _speakCurrentAction());
     }
   }
@@ -70,6 +82,7 @@ class _ModuleExecuteScreenState extends State<ModuleExecuteScreen> {
     );
     if (confirmed == true) {
       _tts.stop();
+      _audioPlayer.stop();
       if (mounted) Navigator.of(context).pop();
     }
   }
@@ -81,38 +94,33 @@ class _ModuleExecuteScreenState extends State<ModuleExecuteScreen> {
 
     final progress = (_currentIndex + 1) / widget.actions.length;
     return Scaffold(
-      appBar: AppBar(title: Text(widget.module.name),
-        leading: IconButton(icon: const Icon(Icons.close),
-          onPressed: _confirmEnd),   // 中途退出确认
+      appBar: AppBar(
+        title: Text(widget.module.name),
+        leading: IconButton(icon: const Icon(Icons.close), onPressed: _confirmEnd),
       ),
       body: Column(
         children: [
-          // 进度条
           LinearProgressIndicator(value: progress),
           const SizedBox(height: 24),
-          // 当前动作名称（大字）
           Text(_currentAction.name,
             style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          // 休息标签
           if (_currentAction.isRest)
             const Chip(label: Text('休息', style: TextStyle(color: Colors.orange))),
           const Spacer(),
-          // 倒计时大数字
           CountdownTimer(
             key: _timerKey,
             totalSeconds: _currentAction.durationSeconds,
-            showBeep: !_currentAction.isRest, // 休息时不显示提示（SR3 step 5）
+            showBeep: !_currentAction.isRest,
+            onBeep: _currentAction.isRest ? null : _playCountdownBeep,
             onComplete: _onActionComplete,
           ),
           const Spacer(),
-          // 控制栏
           Padding(
             padding: const EdgeInsets.all(24),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // ---- 暂停/继续按钮 (SR3 4a) ----
                 IconButton.filled(
                   icon: Icon(_timerKey.currentState?.isPaused == true
                       ? Icons.play_arrow : Icons.pause, size: 36),
@@ -124,7 +132,6 @@ class _ModuleExecuteScreenState extends State<ModuleExecuteScreen> {
                   },
                 ),
                 const SizedBox(width: 48),
-                // ---- 结束按钮 (SR3 4b) ----
                 IconButton(
                   icon: const Icon(Icons.stop, size: 36, color: Colors.red),
                   onPressed: _confirmEnd,
@@ -138,7 +145,6 @@ class _ModuleExecuteScreenState extends State<ModuleExecuteScreen> {
     );
   }
 
-  /// 完成画面（SR3 step 7）
   Widget _buildCompleteScreen() {
     final totalSec = ExerciseModule.totalDuration(widget.actions);
     return Scaffold(

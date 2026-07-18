@@ -5,17 +5,20 @@ import 'package:flutter/material.dart';
 /// 倒计时组件 — 每秒递减显示大字秒数
 ///
 /// 到达 0 时回调 [onComplete]。
-/// 支持 [pause]/[resume]/[reset] 外部控制。
+/// 倒数到 5 秒时回调 [onBeep]（由父组件播放提示音）。
+/// 支持 [pause]/[resume] 外部控制。
 class CountdownTimer extends StatefulWidget {
   final int totalSeconds;       // 倒计时初始秒数
   final VoidCallback onComplete; // 倒计时结束回调
   final bool showBeep;          // 最后 5 秒是否显示高亮提示
+  final VoidCallback? onBeep;   // 倒数到 5 秒时的回调（播放"铛铛铛"音频）
 
   const CountdownTimer({
     super.key,
     required this.totalSeconds,
     required this.onComplete,
     this.showBeep = true,
+    this.onBeep,
   });
 
   @override State<CountdownTimer> createState() => CountdownTimerState();
@@ -32,6 +35,20 @@ class CountdownTimerState extends State<CountdownTimer> {
     _start();
   }
 
+  /// 当父组件切换动作时（totalSeconds 变化），
+  /// 必须重置倒计时为新动作的时长。
+  /// GlobalKey 复用导致 initState 不重复执行，
+  /// 因此需要在 didUpdateWidget 中手动重置状态。
+  @override void didUpdateWidget(CountdownTimer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.totalSeconds != oldWidget.totalSeconds) {
+      _timer?.cancel();
+      _remaining = widget.totalSeconds;
+      _paused = false;
+      _start();
+    }
+  }
+
   void _start() {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
@@ -42,6 +59,10 @@ class CountdownTimerState extends State<CountdownTimer> {
         return;
       }
       setState(() => _remaining--);
+      // 倒数到 5 秒时触发音频回调（如"铛铛铛"提示音）
+      if (_remaining == 5 && widget.showBeep && widget.onBeep != null) {
+        widget.onBeep!();
+      }
     });
   }
 
