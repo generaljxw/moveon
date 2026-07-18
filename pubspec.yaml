@@ -1,20 +1,37 @@
 name: moveon
-description: "MoveOn (动起来) - Windows desktop fitness app"
+description: 动起来（MoveOn）- 面向健身人群的桌面运动应用
 publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.12.0
+  sdk: '>=3.2.0 <4.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
-  cupertino_icons: ^1.0.8
+  # 状态管理 — 轻量、适合本项目的规模
+  provider: ^6.1.1
+  # SQLite 本地数据库 — Windows 桌面需用 FFI 版本
+  sqflite_common_ffi: ^2.3.0
+  # 文件路径 — 获取应用数据目录
+  path_provider: ^2.1.1
+  # TTS 语音合成 — 调用 Windows 系统语音引擎
+  flutter_tts: ^3.8.3
+  # 视频播放 — 内置视频跟练功能
+  video_player: ^2.8.1
+  # 轻量键值存储 — 保存登录状态、用户偏好
+  shared_preferences: ^2.2.2
+  # 密码哈希 — 单向加密存储密码
+  crypto: ^3.0.3
+  # 日期格式化 — 模组创建时间等
+  intl: ^0.19.0
+  # 路径拼接 — 数据库文件路径构造
+  path: ^1.8.3
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
+  flutter_lints: ^3.0.1
 
 flutter:
   uses-material-design: true
