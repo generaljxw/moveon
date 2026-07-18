@@ -108,12 +108,6 @@ class _ModuleCreateScreenState extends State<ModuleCreateScreen> {
               TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: '动作名称')),
               TextField(controller: durationCtrl, decoration: const InputDecoration(labelText: '时长（秒）', hintText: '5-600'),
                   keyboardType: TextInputType.number),
-              CheckboxListTile(
-                title: const Text('休息间隔'),
-                value: isRest,
-                onChanged: (v) => setDialogState(() => isRest = v ?? false),
-                controlAffinity: ListTileControlAffinity.leading,
-              ),
             ],
           ),
           actions: [
@@ -283,11 +277,11 @@ class _ModuleCreateScreenState extends State<ModuleCreateScreen> {
               ),
             ),
             const SizedBox(width: 8),
-            // 快捷休息：弹出时长选择对话框，默认 10 秒
+            // 添加休息：弹出时长选择对话框，默认 10 秒
             Expanded(
               child: OutlinedButton.icon(
                 icon: const Icon(Icons.bedtime_outlined, size: 18),
-                label: const Text('快捷休息', style: TextStyle(fontSize: 13)),
+                label: const Text('添加休息', style: TextStyle(fontSize: 13)),
                 style: OutlinedButton.styleFrom(foregroundColor: Colors.orange),
                 onPressed: () => _showQuickRestDialog(),
               ),

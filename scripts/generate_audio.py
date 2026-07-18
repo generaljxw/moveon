@@ -21,8 +21,10 @@ base = os.path.dirname(os.path.abspath(__file__))
 audio_dir = os.path.join(base, '..', 'assets', 'audio')
 os.makedirs(audio_dir, exist_ok=True)
 
-# 铛铛铛：880 Hz, 0.3s 短促高音
+# 铛铛铛洪亮音：880 Hz, 0.3s 短促高音（最后一秒用）
 create_wav(os.path.join(audio_dir, 'countdown_beep.wav'), 880, 0.3)
+# 柔和提示音：440 Hz, 0.15s 低沉短音（前四秒用）
+create_wav(os.path.join(audio_dir, 'countdown_soft.wav'), 440, 0.15)
 # 锻炼完成：520 Hz, 1.5s 舒缓长音
 create_wav(os.path.join(audio_dir, 'workout_complete.wav'), 520, 1.5)
 

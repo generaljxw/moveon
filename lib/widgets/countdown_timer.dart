@@ -10,8 +10,8 @@ import 'package:flutter/material.dart';
 class CountdownTimer extends StatefulWidget {
   final int totalSeconds;       // 倒计时初始秒数
   final VoidCallback onComplete; // 倒计时结束回调
-  final bool showBeep;          // 最后 5 秒是否显示高亮提示
-  final VoidCallback? onBeep;   // 倒数到 5 秒时的回调（播放"铛铛铛"音频）
+  final bool showBeep;                       // 最后 5 秒是否显示高亮提示
+  final void Function(int remaining)? onBeep; // 倒数到 5,4,3,2,1 秒时回调，参数为剩余秒数
 
   const CountdownTimer({
     super.key,
@@ -59,9 +59,10 @@ class CountdownTimerState extends State<CountdownTimer> {
         return;
       }
       setState(() => _remaining--);
-      // 倒数到 5 秒时触发音频回调（如"铛铛铛"提示音）
-      if (_remaining == 5 && widget.showBeep && widget.onBeep != null) {
-        widget.onBeep!();
+      // 最后 5 秒每秒触发音频回调（5→4→3→2→1），参数为当前剩余秒数
+      // 5,4,3,2 → 柔和提示音；1 → 洪亮结束音
+      if (_remaining >= 1 && _remaining <= 5 && widget.showBeep && widget.onBeep != null) {
+        widget.onBeep!(_remaining);
       }
     });
   }

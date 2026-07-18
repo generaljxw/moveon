@@ -49,9 +49,15 @@ class _ModuleExecuteScreenState extends State<ModuleExecuteScreen> {
     }
   }
 
-  /// 倒计时倒数到 5 秒 → 播放"铛铛铛"提示音
-  void _playCountdownBeep() {
-    _audioPlayer.play(AssetSource('audio/countdown_beep.wav'));
+  /// 倒计时最后 5 秒每秒响一次：5,4,3,2 → 柔和音；1 → 洪亮音
+  void _playCountdownBeep(int remainingSeconds) {
+    if (remainingSeconds == 1) {
+      // 最后一秒：洪亮"铛"声，提示即将结束
+      _audioPlayer.play(AssetSource('audio/countdown_beep.wav'));
+    } else {
+      // 前四秒：柔和短音
+      _audioPlayer.play(AssetSource('audio/countdown_soft.wav'));
+    }
   }
 
   /// 当前动作完成 → 切换到下一动作
