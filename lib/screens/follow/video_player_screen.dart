@@ -5,6 +5,7 @@ import 'package:video_player/video_player.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../services/category_service.dart';
 import '../../models/online_video.dart';
+import '../../utils/responsive_helper.dart';
 
 /// 全屏视频播放器 — 支持三种视频来源
 ///
@@ -117,20 +118,23 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   }
 
   @override Widget build(BuildContext context) {
+    final isLandscape = ResponsiveHelper.isLandscape(context);
+
     // 正在打开浏览器 → 短暂过渡 UI
     if (_openingBrowser) {
       return Scaffold(
-        appBar: AppBar(title: Text(_title)),
+        appBar: isLandscape ? null : AppBar(title: Text(_title)),
         body: const Center(child: Text('正在打开浏览器...')),
       );
     }
     return Scaffold(
-      appBar: AppBar(title: Text(_title)),
-      body: _buildBody(),
+      // 横屏全屏：隐藏 AppBar
+      appBar: isLandscape ? null : AppBar(title: Text(_title)),
+      body: _buildBody(isLandscape),
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildBody(bool isLandscape) {
     if (_hasError) {
       return Center(
         child: Padding(
@@ -150,6 +154,15 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                 style: const TextStyle(color: Colors.grey),
                 textAlign: TextAlign.center,
               ),
+              // 横屏时提供返回按钮（因为没有 AppBar）
+              if (isLandscape) ...[
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.arrow_back),
+                  label: const Text('返回'),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
             ],
           ),
         ),
@@ -182,6 +195,13 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                 },
               ),
               const Spacer(),
+              // 横屏时显示返回按钮
+              if (isLandscape)
+                TextButton.icon(
+                  icon: const Icon(Icons.arrow_back),
+                  label: const Text('返回'),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
               if (_controller!.value.position >= _controller!.value.duration)
                 TextButton.icon(
                   icon: const Icon(Icons.replay),

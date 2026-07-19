@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../models/exercise_module.dart';
 import '../../models/exercise_action.dart';
 import '../../services/tts_service.dart';
+import '../../utils/responsive_helper.dart';
 import '../../widgets/countdown_timer.dart';
 
 /// 练习执行页面 — 按顺序执行每个动作
@@ -94,22 +95,41 @@ class _ModuleExecuteScreenState extends State<ModuleExecuteScreen> {
   }
 
   @override Widget build(BuildContext context) {
+    final isLandscape = ResponsiveHelper.isLandscape(context);
+
     if (_finished) {
-      return _buildCompleteScreen();
+      return _buildCompleteScreen(isLandscape);
     }
 
     final progress = (_currentIndex + 1) / widget.actions.length;
     return Scaffold(
-      appBar: AppBar(
+      // 横屏全屏：隐藏 AppBar
+      appBar: isLandscape ? null : AppBar(
         title: Text(widget.module.name),
         leading: IconButton(icon: const Icon(Icons.close), onPressed: _confirmEnd),
       ),
       body: Column(
         children: [
+          // 横屏时提供关闭按钮（无 AppBar）
+          if (isLandscape)
+            Padding(
+              padding: const EdgeInsets.only(top: 8, right: 8),
+              child: Align(
+                alignment: Alignment.topRight,
+                child: IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: _confirmEnd,
+                ),
+              ),
+            ),
           LinearProgressIndicator(value: progress),
           const SizedBox(height: 24),
+          // 横屏时动作名称更大
           Text(_currentAction.name,
-            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+            style: TextStyle(
+              fontSize: isLandscape ? 42 : 28,
+              fontWeight: FontWeight.bold,
+            )),
           const SizedBox(height: 8),
           if (_currentAction.isRest)
             const Chip(label: Text('休息', style: TextStyle(color: Colors.orange))),
@@ -151,10 +171,10 @@ class _ModuleExecuteScreenState extends State<ModuleExecuteScreen> {
     );
   }
 
-  Widget _buildCompleteScreen() {
+  Widget _buildCompleteScreen(bool isLandscape) {
     final totalSec = ExerciseModule.totalDuration(widget.actions);
     return Scaffold(
-      appBar: AppBar(title: const Text('练习完成')),
+      appBar: isLandscape ? null : AppBar(title: const Text('练习完成')),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

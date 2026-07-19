@@ -7,6 +7,7 @@ import '../../models/exercise_module.dart';
 import '../../models/exercise_action.dart';
 import '../../models/workout_category.dart';
 import '../../services/tts_service.dart';
+import '../../utils/responsive_helper.dart';
 
 /// 临时动作数据（编辑用，未持久化前存在本地状态）
 class _ActionDraft {
@@ -53,6 +54,64 @@ class _ModuleCreateScreenState extends State<ModuleCreateScreen> {
   Future<void> _showQuickRestDialog() async {
     final durationCtrl = TextEditingController(text: '10');
 
+    if (ResponsiveHelper.isMobile(context)) {
+      // 移动端：底部表单
+      final result = await showModalBottomSheet<bool>(
+        context: context,
+        isScrollControlled: true,
+        builder: (ctx) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            left: 20, right: 20, top: 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('添加休息间隔', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 12),
+              TextField(
+                controller: durationCtrl,
+                decoration: const InputDecoration(
+                  labelText: '休息时长（秒）', hintText: '5-600', helperText: '默认 10 秒'),
+                keyboardType: TextInputType.number,
+                autofocus: true,
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(child: OutlinedButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('取消'))),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        final dur = int.tryParse(durationCtrl.text);
+                        if (dur == null || dur < 5 || dur > 600) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('时长范围为 5-600 秒')));
+                          return;
+                        }
+                        Navigator.of(ctx).pop(true);
+                      },
+                      child: const Text('添加'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      );
+
+      if (result == true) {
+        setState(() => _actions.add(_ActionDraft(
+          name: '休息', durationSeconds: int.parse(durationCtrl.text), isRest: true)));
+      }
+      return;
+    }
+
+    // 桌面端：原 Dialog（保持不变）
     final result = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -62,7 +121,7 @@ class _ModuleCreateScreenState extends State<ModuleCreateScreen> {
           decoration: const InputDecoration(
             labelText: '休息时长（秒）', hintText: '5-600', helperText: '默认 10 秒'),
           keyboardType: TextInputType.number,
-          autofocus: true, // 自动聚焦，方便快速输入
+          autofocus: true,
         ),
         actions: [
           TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('取消')),
@@ -84,26 +143,19 @@ class _ModuleCreateScreenState extends State<ModuleCreateScreen> {
 
     if (result == true) {
       setState(() => _actions.add(_ActionDraft(
-        name: '休息',
-        durationSeconds: int.parse(durationCtrl.text),
-        isRest: true,
-      )));
+        name: '休息', durationSeconds: int.parse(durationCtrl.text), isRest: true)));
     }
   }
 
   /// 批量删除选中动作（SR2 5b）
   Future<void> _batchDelete() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('确认删除'),
-        content: Text('确定要删除已选的 ${_selectedIndices.length} 个动作吗？'),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('取消')),
-          TextButton(onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('确定', style: TextStyle(color: Colors.red))),
-        ],
-      ),
+    final confirmed = await ResponsiveHelper.showMobileConfirm(
+      context,
+      title: '确认删除',
+      content: '确定要删除已选的 ${_selectedIndices.length} 个动作吗？',
+      confirmLabel: '确定',
+      cancelLabel: '取消',
+      confirmColor: Colors.red,
     );
     if (confirmed == true) {
       setState(() {
@@ -124,6 +176,81 @@ class _ModuleCreateScreenState extends State<ModuleCreateScreen> {
         text: editTarget?.durationSeconds.toString() ?? '60');
     bool isRest = editTarget?.isRest ?? false;
 
+    final isMobile = ResponsiveHelper.isMobile(context);
+    final isEdit = editTarget != null;
+
+    if (isMobile) {
+      final result = await showModalBottomSheet<bool>(
+        context: context,
+        isScrollControlled: true,
+        builder: (ctx) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            left: 20, right: 20, top: 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(isEdit ? '编辑动作' : '添加动作',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 12),
+              TextField(
+                controller: nameCtrl,
+                decoration: const InputDecoration(labelText: '动作名称'),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: durationCtrl,
+                decoration: const InputDecoration(labelText: '时长（秒）', hintText: '5-600'),
+                keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(child: OutlinedButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('取消'))),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (nameCtrl.text.trim().isEmpty) return;
+                        final dur = int.tryParse(durationCtrl.text);
+                        if (dur == null || dur < 5 || dur > 600) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('时长范围为 5-600 秒')));
+                          return;
+                        }
+                        Navigator.of(ctx).pop(true);
+                      },
+                      child: const Text('添加'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      );
+
+      if (result == true) {
+        final draft = _ActionDraft(
+          name: nameCtrl.text.trim(),
+          durationSeconds: int.parse(durationCtrl.text),
+          isRest: isRest,
+        );
+        setState(() {
+          if (editIndex != null) {
+            _actions[editIndex] = draft;
+          } else {
+            _actions.add(draft);
+          }
+        });
+      }
+      return;
+    }
+
+    // 桌面端：原 Dialog（保持不变）
     final result = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(

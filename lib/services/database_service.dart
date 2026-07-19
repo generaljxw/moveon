@@ -1,5 +1,6 @@
 // lib/services/database_service.dart — SQLite 数据库服务
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'database_service_stub.dart';
+export 'database_service_stub.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -33,7 +34,7 @@ class DatabaseService {
     if (inMemory) {
       // 使用带时间戳的唯一路径确保每个测试实例完全独立
       final testPath = 'file:test_${DateTime.now().microsecondsSinceEpoch}.db?mode=memory&cache=shared';
-      _db = await databaseFactoryFfi.openDatabase(
+      _db = await databaseFactory.openDatabase(
         testPath,
         options: OpenDatabaseOptions(
           version: 2,
@@ -47,7 +48,7 @@ class DatabaseService {
     // 生产模式：文件存储
     final dir = await getApplicationDocumentsDirectory();
     final dbPath = p.join(dir.path, 'moveon.db');
-    _db = await databaseFactoryFfi.openDatabase(
+    _db = await databaseFactory.openDatabase(
       dbPath,
       options: OpenDatabaseOptions(
         version: 2,

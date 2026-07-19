@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../state/auth_provider.dart';
 import '../../theme.dart';
+import '../../utils/responsive_helper.dart';
 import 'login_screen.dart';
 import 'register_screen.dart';
 import 'change_password_screen.dart';
@@ -126,19 +127,16 @@ class ProfileHomeScreen extends StatelessWidget {
   }
 
   void _showLogoutConfirm(BuildContext context, AuthProvider auth) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('确认退出'),
-        content: const Text('确定要退出登录吗？'),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('取消')),
-          TextButton(
-            onPressed: () { auth.logout(); Navigator.of(ctx).pop(); },
-            child: const Text('确定', style: TextStyle(color: MoveOnTheme.colorAccent)),
-          ),
-        ],
-      ),
-    );
+    ResponsiveHelper.showMobileConfirm(
+      context,
+      title: '确认退出',
+      content: '确定要退出登录吗？',
+      confirmLabel: '确定',
+      confirmColor: MoveOnTheme.colorAccent,
+    ).then((confirmed) {
+      if (confirmed == true) {
+        auth.logout();
+      }
+    });
   }
 }
