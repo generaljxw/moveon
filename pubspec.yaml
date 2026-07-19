@@ -13,6 +13,8 @@ dependencies:
   provider: ^6.1.1
   # SQLite 本地数据库 — Windows 桌面需用 FFI 版本
   sqflite_common_ffi: ^2.3.0
+  # SQLite 标准版 — Android MethodChannel 实现（与 FFI 版 API 兼容）
+  sqflite: ^2.3.0
   # 文件路径 — 获取应用数据目录
   path_provider: ^2.1.1
   # TTS 语音合成 — 调用 Windows 系统语音引擎
