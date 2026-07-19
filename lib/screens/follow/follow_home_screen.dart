@@ -6,6 +6,7 @@ import '../../services/category_service.dart';
 import '../../services/database_service.dart';
 import '../../state/auth_provider.dart';
 import '../../theme.dart';
+import '../../utils/responsive_helper.dart';
 import 'video_list_screen.dart';
 
 /// 跟练首页 — 8 种运动类型的彩色卡片网格
@@ -66,8 +67,8 @@ class _FollowHomeScreenState extends State<FollowHomeScreen> {
       ),
       body: GridView.builder(
         padding: const EdgeInsets.all(12),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 4,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: ResponsiveHelper.gridColumns(context),
           crossAxisSpacing: 8,
           mainAxisSpacing: 8,
           childAspectRatio: 0.75,
