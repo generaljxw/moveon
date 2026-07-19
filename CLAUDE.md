@@ -17,6 +17,12 @@
 
 ## 开发规则
 
+### 规则 0：需求分析 — Use Case 方法 + PRD 文档
+- 所有需求讨论和分析**必须**采用 Use Case（用例）方法进行
+- 需求分析完成后**必须**输出到 PRD（产品需求文档）中，存放在 `docs/` 目录下
+- PRD 文档应包含：用例图/用例描述、功能需求列表、非功能需求、验收标准
+- 未完成 PRD 文档并经过评审确认前，不得进入设计或编码阶段
+
 ### 规则 1：Spec 先行，无 Spec 不开发
 在编写任何代码之前，**必须**先有经过评审确认的 spec 文档。未完成需求分析并产出 spec 文档前，绝不开始代码实现。
 
@@ -46,6 +52,15 @@
 - 使用 Git 进行版本控制
 - 遵循分支开发策略：`main` 分支保持稳定，功能开发在特性分支进行
 - 提交前检查：代码编译通过 + 测试全部通过 + 无 lint 警告
+- **禁止自主推送**：在没有用户明确指令时，**不得**自行将代码推送到远程仓库（`github.com/generaljxw`），仅在用户明确要求推送时才可执行 `git push`
+
+### 规则 7：工具下载优先使用国内镜像
+- 所有需要下载开发工具、SDK、依赖包的安装操作，**必须**优先使用国内镜像源
+- 常用镜像源优先级：清华大学 TUNA > 腾讯云 > 阿里云
+- Flutter Pub 依赖：`PUB_HOSTED_URL=https://pub.flutter-io.cn`、`FLUTTER_STORAGE_BASE_URL=https://storage.flutter-io.cn`
+- Android SDK：`https://mirrors.cloud.tencent.com/android/repository/` 或清华源
+- Gradle/Maven：阿里云 `https://maven.aliyun.com/repository/public`
+- 禁止直接使用 Google 官方源下载大文件（developer.android.com、dl.google.com 等）
 
 ## 项目概述
 
