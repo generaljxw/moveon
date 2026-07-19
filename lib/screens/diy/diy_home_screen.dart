@@ -67,7 +67,10 @@ class _DiyHomeScreenState extends State<DiyHomeScreen> {
       return _buildGuestPrompt(context); // 游客模式
     }
     return Scaffold(
-      appBar: AppBar(title: const Text('DIY 练习')),
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        title: const Text('DIY 练习'),
+        backgroundColor: Colors.white.withAlpha(190)),
       body: _modules.isEmpty && _loaded
           ? const Center(
               child: Column(
@@ -145,7 +148,10 @@ class _DiyHomeScreenState extends State<DiyHomeScreen> {
   /// 游客提示：请先登录
   Widget _buildGuestPrompt(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('DIY 练习')),
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        title: const Text('DIY 练习'),
+        backgroundColor: Colors.white.withAlpha(190)),
       body: const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

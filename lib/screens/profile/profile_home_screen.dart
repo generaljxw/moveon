@@ -26,7 +26,10 @@ class ProfileHomeScreen extends StatelessWidget {
 
   Widget _buildLoggedOut(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('我的')),
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        title: const Text('我的'),
+        backgroundColor: Colors.white.withAlpha(190)),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -76,7 +79,10 @@ class ProfileHomeScreen extends StatelessWidget {
 
   Widget _buildLoggedIn(BuildContext context, AuthProvider auth) {
     return Scaffold(
-      appBar: AppBar(title: const Text('我的')),
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        title: const Text('我的'),
+        backgroundColor: Colors.white.withAlpha(190)),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(

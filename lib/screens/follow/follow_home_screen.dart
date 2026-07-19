@@ -54,8 +54,10 @@ class _FollowHomeScreenState extends State<FollowHomeScreen> {
   @override Widget build(BuildContext context) {
     final categories = CategoryService().getCategories();
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text('视频跟练'),
+        backgroundColor: Colors.white.withAlpha(190),
         bottom: const PreferredSize(
           preferredSize: Size.fromHeight(24),
           child: Padding(
