@@ -1,5 +1,6 @@
 // lib/services/database_service.dart — SQLite 数据库服务
 import 'database_service_stub.dart';
+export 'database_service_stub.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
