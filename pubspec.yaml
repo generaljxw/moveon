@@ -46,3 +46,6 @@ flutter:
     - assets/videos/
     - assets/audio/
     - assets/images/category_icons/
+    - assets/images/bg_follow.jpg
+    - assets/images/bg_diy.jpg
+    - assets/images/bg_profile.jpg
