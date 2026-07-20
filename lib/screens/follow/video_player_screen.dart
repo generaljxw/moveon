@@ -56,15 +56,13 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         _controller = VideoPlayerController.networkUrl(Uri.parse(widget.onlineVideo!.url));
       } else if (widget.video != null) {
         // 内置视频 → 跨平台播放
-        // Windows：通过 file:// 路径直接访问解压后的文件
-        // Android/iOS：先从 APK 内 assets 提取到缓存目录，再文件播放
-        //   VideoPlayerController.asset() 对大文件（22MB）不稳定，故改用提取方案
         if (Platform.isWindows) {
           final exeDir = File(Platform.resolvedExecutable).parent.path;
           final filePath = '$exeDir/data/flutter_assets/${widget.video!.assetPath}';
           _controller = VideoPlayerController.file(File(filePath));
         } else {
-          _controller = await _extractAssetAndPlay(widget.video!.assetPath);
+          // Android/iOS：策略 A → 缓存提取 + file() 播放；策略 B → asset() 兜底
+          _controller = await _loadBuiltInVideo(widget.video!.assetPath);
         }
       } else {
         setState(() => _hasError = true);
@@ -79,30 +77,45 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     }
   }
 
-  /// 从 APK 内 assets 提取视频到缓存目录，返回文件播放控制器
+  /// 加载内置视频（Android/iOS 通用）
   ///
-  /// VideoPlayerController.asset() 对大文件（22MB mp4）在 release 模式下不够稳定，
-  /// 因此先将资源提取为独立文件再用 file() 播放。已提取过的文件直接复用。
+  /// 策略 A：从 APK assets 提取到缓存目录 → file() 播放
+  /// 策略 B：asset() 直接播放（兜底方案）
   ///
-  /// 注意：rootBundle.load() 返回的 ByteData 可能引用共享 ByteBuffer，
-  /// 其 offsetInBytes 不一定为 0。必须使用 offsetInBytes + lengthInBytes
-  /// 切片写入，否则写入的文件头部可能是空白数据，导致视频无法解码。
-  Future<VideoPlayerController> _extractAssetAndPlay(String assetPath) async {
-    final dir = await getApplicationDocumentsDirectory();
-    final fileName = assetPath.replaceAll('/', '_');
-    final file = File('${dir.path}/$fileName');
+  /// 华为等厂商可能在应用私有目录上有更严格的 SELinux 策略，
+  /// 缓存目录 (`getTemporaryDirectory`) 的可写性最为可靠。
+  Future<VideoPlayerController> _loadBuiltInVideo(String assetPath) async {
+    // ---- 策略 A：提取到缓存目录 ----
+    try {
+      final cacheDir = await getTemporaryDirectory();
+      final fileName = assetPath.replaceAll('/', '_');
+      final file = File('${cacheDir.path}/$fileName');
 
-    // 已提取且文件大小合理（> 1KB）则跳过重复提取
-    if (!await file.exists() || await file.length() < 1024) {
-      final byteData = await rootBundle.load(assetPath);
-      final bytes = byteData.buffer.asUint8List(
-        byteData.offsetInBytes,
-        byteData.lengthInBytes,
-      );
-      await file.writeAsBytes(bytes);
+      // 已有缓存且文件大于 100KB 则直接复用
+      final exists = await file.exists();
+      var fileLen = exists ? await file.length() : 0;
+      if (fileLen < 100 * 1024) {
+        // 重新提取：确保 ByteData offset 正确处理
+        final byteData = await rootBundle.load(assetPath);
+        final bytes = byteData.buffer.asUint8List(
+          byteData.offsetInBytes,
+          byteData.lengthInBytes,
+        );
+        await file.writeAsBytes(bytes, flush: true);
+        fileLen = await file.length();
+      }
+
+      // 验证提取完整性：文件大小应与 asset 原始大小一致
+      if (fileLen > 100 * 1024) {
+        return VideoPlayerController.file(file);
+      }
+    } catch (_) {
+      // 提取失败 → 降级到策略 B
     }
 
-    return VideoPlayerController.file(file);
+    // ---- 策略 B：asset() 兜底 ----
+    // 部分设备上 file() 路径不可达时，asset() 可能可用
+    return VideoPlayerController.asset(assetPath);
   }
 
   /// 用系统浏览器打开平台链接（B站等）
