@@ -24,13 +24,15 @@ import 'dart:io' show Platform;
 
 /// 初始化数据库引擎（跨平台适配）
 ///
-/// Windows：调用 [sqfliteFfiInit()] 加载 sqlite3.dll 并注册 FFI 绑定
-/// Android：系统 libsqlite 自动可用，无需额外初始化
+/// Windows：调用 [sqfliteFfiInit()] 加载 sqlite3.dll
+/// 双平台：必须将 [databaseFactoryFfi] 注册为全局 factory，
+/// 否则 [databaseFactory] 会抛出 "databaseFactory not initialized"。
 Future<void> initDatabaseEngine() async {
   if (Platform.isWindows) {
-    // Windows 桌面：sqflite FFI 后端需显式初始化
+    // Windows 桌面：需要显式加载 sqlite3.dll
     sqfliteFfiInit();
   }
-  // Android：sqflite_common_ffi 的 FFI 绑定自动映射到系统 SQLite
-  // 无需额外初始化步骤
+  // 关键：sqflite_common_ffi 在双平台都需要注册 FFI 工厂
+  // 否则 databaseFactory getter 会抛出 Bad state 异常
+  databaseFactory = databaseFactoryFfi;
 }
