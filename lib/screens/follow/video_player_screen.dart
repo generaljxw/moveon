@@ -1,6 +1,8 @@
 // lib/screens/follow/video_player_screen.dart — 视频播放器（内置本地 + 在线直链 + 浏览器跳转）
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../services/category_service.dart';
@@ -53,10 +55,17 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         // 在线直链 → 网络流播放
         _controller = VideoPlayerController.networkUrl(Uri.parse(widget.onlineVideo!.url));
       } else if (widget.video != null) {
-        // 内置视频 → 本地文件播放
-        final exeDir = File(Platform.resolvedExecutable).parent.path;
-        final filePath = '$exeDir/data/flutter_assets/${widget.video!.assetPath}';
-        _controller = VideoPlayerController.file(File(filePath));
+        // 内置视频 → 跨平台播放
+        // Windows：通过 file:// 路径直接访问解压后的文件
+        // Android/iOS：先从 APK 内 assets 提取到缓存目录，再文件播放
+        //   VideoPlayerController.asset() 对大文件（22MB）不稳定，故改用提取方案
+        if (Platform.isWindows) {
+          final exeDir = File(Platform.resolvedExecutable).parent.path;
+          final filePath = '$exeDir/data/flutter_assets/${widget.video!.assetPath}';
+          _controller = VideoPlayerController.file(File(filePath));
+        } else {
+          _controller = await _extractAssetAndPlay(widget.video!.assetPath);
+        }
       } else {
         setState(() => _hasError = true);
         return;
@@ -68,6 +77,25 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     } catch (_) {
       if (mounted) setState(() => _hasError = true);
     }
+  }
+
+  /// 从 APK 内 assets 提取视频到缓存目录，返回文件播放控制器
+  ///
+  /// VideoPlayerController.asset() 对大文件（22MB mp4）在 release 模式下不够稳定，
+  /// 因此先将资源提取为独立文件再用 file() 播放。已提取过的文件直接复用。
+  Future<VideoPlayerController> _extractAssetAndPlay(String assetPath) async {
+    final dir = await getApplicationDocumentsDirectory();
+    // 用 asset 路径的 hash 作为缓存文件名，避免路径分隔符冲突
+    final fileName = assetPath.replaceAll('/', '_');
+    final file = File('${dir.path}/$fileName');
+
+    // 如果已提取过且文件完整，直接播放（幂等）
+    if (!await file.exists()) {
+      final bytes = await rootBundle.load(assetPath);
+      await file.writeAsBytes(bytes.buffer.asUint8List());
+    }
+
+    return VideoPlayerController.file(file);
   }
 
   /// 用系统浏览器打开平台链接（B站等）
