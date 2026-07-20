@@ -83,16 +83,23 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   ///
   /// VideoPlayerController.asset() 对大文件（22MB mp4）在 release 模式下不够稳定，
   /// 因此先将资源提取为独立文件再用 file() 播放。已提取过的文件直接复用。
+  ///
+  /// 注意：rootBundle.load() 返回的 ByteData 可能引用共享 ByteBuffer，
+  /// 其 offsetInBytes 不一定为 0。必须使用 offsetInBytes + lengthInBytes
+  /// 切片写入，否则写入的文件头部可能是空白数据，导致视频无法解码。
   Future<VideoPlayerController> _extractAssetAndPlay(String assetPath) async {
     final dir = await getApplicationDocumentsDirectory();
-    // 用 asset 路径的 hash 作为缓存文件名，避免路径分隔符冲突
     final fileName = assetPath.replaceAll('/', '_');
     final file = File('${dir.path}/$fileName');
 
-    // 如果已提取过且文件完整，直接播放（幂等）
-    if (!await file.exists()) {
-      final bytes = await rootBundle.load(assetPath);
-      await file.writeAsBytes(bytes.buffer.asUint8List());
+    // 已提取且文件大小合理（> 1KB）则跳过重复提取
+    if (!await file.exists() || await file.length() < 1024) {
+      final byteData = await rootBundle.load(assetPath);
+      final bytes = byteData.buffer.asUint8List(
+        byteData.offsetInBytes,
+        byteData.lengthInBytes,
+      );
+      await file.writeAsBytes(bytes);
     }
 
     return VideoPlayerController.file(file);
